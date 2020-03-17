@@ -17,19 +17,20 @@ def parse_sequence(sequence):
       notes['is_drum'].append(note.is_drum)
     
     total_time = sequence.total_time
-    qpm = sequence.Tempo.qpm
+    qpm = sequence.tempos[0].qpm
 
     return notes, total_time, qpm
 
 def main():
     dataset = tfds.load(name="groove/full-16000hz", data_dir="F:\\Dataset")
     for features in dataset['train'].take(1):
-        print(features.keys())
+        print(features.keys(), features['id'])
         midi = features['midi'].numpy()
+        print(len(midi))
 
         sequence = mm.midi_to_note_sequence(midi)
-        fig = mm.plot_sequence(sequence, show_figure=False)
-        export_png(fig, filename="plot.png")
+        # fig = mm.plot_sequence(sequence, show_figure=False)
+        # export_png(fig, filename="plot.png")
 
         mm.sequence_proto_to_midi_file(sequence, 'notes.mid')
 
