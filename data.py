@@ -35,6 +35,8 @@ def main():
         mm.sequence_proto_to_midi_file(sequence, 'notes.mid')
 
         notes, total_time, qpm = parse_sequence(sequence)
+        print(notes['start_time'][:5])
+        print(notes['end_time'][:5])
         
 
 if __name__ == '__main__':
