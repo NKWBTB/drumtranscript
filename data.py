@@ -1,3 +1,5 @@
+import config as cfg
+import os
 import tensorflow as tf
 import tensorflow_datasets as tfds
 import magenta.music as mm
@@ -21,23 +23,38 @@ def parse_sequence(sequence):
 
     return notes, total_time, qpm
 
-def main():
-    dataset = tfds.load(name="groove/full-16000hz", data_dir="F:\\Dataset")
-    for features in dataset['train'].take(1):
-        print(features.keys(), features['id'])
-        midi = features['midi'].numpy()
-        print(len(midi))
+def preprocess(save_path=cfg.SEQ_SAMPLE_PATH, frame_size=cfg.FRAME_SIZE):
+    '''Preprocess the dataset into samples in sequence_level
+    
+    Args:
+        save_path: path to save the sample files
+        frame_size: number of point in a frame
+        start_only: mark the label as 1 only at the frame with in the start_time
+    
+    Outputs:
+        Pickle files of a dict, each file contains one sequence, for example:
 
-        sequence = mm.midi_to_note_sequence(midi)
-        # fig = mm.plot_sequence(sequence, show_figure=False)
-        # export_png(fig, filename="plot.png")
+        {'wave': [...], '{#Pitch_Number}': [...], '{#Pitch_Number}-onset': [...], ...}
+    '''
+    dataset = tfds.load(name=cfg.TFDS_NAME, data_dir=cfg.TFDS_DATA_DIR)
 
-        mm.sequence_proto_to_midi_file(sequence, 'notes.mid')
-
-        notes, total_time, qpm = parse_sequence(sequence)
-        print(notes['start_time'][:5])
-        print(notes['end_time'][:5])
+    for split in cfg.TFDS_SPLITS:
+        dir = os.path.join(save_path, str(frame_size), split)
+        if not os.path.exists(dir):
+            os.makedirs(dir)
         
+        for features in dataset[split]:
+            midi = features['midi'].numpy()
+            audio = features['audio'].numpy()
+            sequence = mm.midi_to_note_sequence(midi)
+            notes, total_time, qpm = parse_sequence(sequence)
+            # fig = mm.plot_sequence(sequence, show_figure=False)
+            # export_png(fig, filename="plot.png")
+            assert(False)
+            #sys.exit(0)
+
+def main():
+    preprocess()        
 
 if __name__ == '__main__':
     main()

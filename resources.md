@@ -23,3 +23,4 @@
 * [Hello Magenta Colab notebook](https://colab.research.google.com/notebooks/magenta/hello_magenta/hello_magenta.ipynb)
 * [Onsets and Frames: Dual-Objective Piano Transcription](https://magenta.tensorflow.org/onsets-frames)
 * [Hands-On Music Generation with Magenta](https://www.google.com/books/edition/Hands_On_Music_Generation_with_Magenta/SUvODwAAQBAJ?hl=en&gbpv=1&bsq=midi)
+* [Python Comment Style](https://zh-google-styleguide.readthedocs.io/en/latest/google-python-styleguide/python_style_rules/#comments)
