@@ -3,12 +3,14 @@ import os
 import tensorflow as tf
 import tensorflow_datasets as tfds
 import magenta.music as mm
+from magenta.music import midi_synth
 import magenta
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 from matplotlib.colors import ListedColormap
 from bokeh.io import export_png
+import scipy
 
 tf.enable_eager_execution()
 
@@ -26,6 +28,30 @@ def parse_sequence(sequence):
     qpm = sequence.tempos[0].qpm
 
     return notes, total_time, qpm
+
+def plot_array(array, x_range = None, subplot = None):
+    if type(x_range) == type(None):
+        x_range = np.arange(array.shape[0])
+    if type(subplot) == type(None):
+        plt.figure()
+    else:
+        plt.subplot(subplot)
+    plt.plot(x_range, array)
+    if type(subplot) == type(None):
+        plt.show()
+        plt.close()
+
+def plot_matrix(mat, x_range = None, y_range = None):
+    if type(x_range) == type(None):
+        x_range = np.arange(mat.shape[0])
+    if type(y_range) == type(None):
+        y_range = np.arange(mat.shape[1])
+    x1mesh, x2mesh = np.meshgrid(y_range, x_range)
+    plt.figure()
+    plt.yticks(y_range)
+    plt.pcolormesh(x1mesh, x2mesh, mat[x_range[0]:x_range[-1]+1, y_range[0]:y_range[-1]+1])
+    plt.show()
+    plt.close()
 
 def preprocess(save_path=cfg.SEQ_SAMPLE_PATH, frame_size=cfg.FRAME_SIZE, frame_time = cfg.FRAME_TIME):
     '''Preprocess the dataset into samples in sequence_level
@@ -60,7 +86,23 @@ def preprocess(save_path=cfg.SEQ_SAMPLE_PATH, frame_size=cfg.FRAME_SIZE, frame_t
             midi = features['midi'].numpy()
             audio = features['audio'].numpy()
             sequence = mm.midi_to_note_sequence(midi)
-            
+            synthed_audio = midi_synth.fluidsynth(sequence, cfg.SAMPLE_RATE)
+
+            # fig = mm.plot_sequence(sequence, show_figure=False)
+            # export_png(fig, filename=os.path.join(dir, "%i.png" % cnt))
+
+            scipy.io.wavfile.write(os.path.join(dir, '%i.wav' % cnt), cfg.SAMPLE_RATE, audio)
+            scipy.io.wavfile.write(os.path.join(dir,'%i_syn.wav' % cnt), cfg.SAMPLE_RATE, synthed_audio)
+            mm.sequence_proto_to_midi_file(sequence, os.path.join(dir, '%i.mid' % cnt))
+
+            '''
+            plt.figure()
+            plot_array(audio, subplot=211)
+            plot_array(synthed_audio, subplot=212)
+            plt.show()
+            plt.close()
+            '''
+
             # Padding audio to generate frames
             pad_num = frame_size - audio.shape[0] % frame_size
             if pad_num:
@@ -92,31 +134,26 @@ def preprocess(save_path=cfg.SEQ_SAMPLE_PATH, frame_size=cfg.FRAME_SIZE, frame_t
             activation = np.zeros((frame_num, cfg.PITCH_NUM), dtype=int)
             onset = np.zeros((frame_num, cfg.PITCH_NUM), dtype=int)
             for i in range(frame_num):
-                st = i * frame_time
-                ed = st + frame_time
+                st = i * frame_time / 1000.0
+                ed = (i+1) * frame_time / 1000.0
                 while l < len(start_times) and start_times[l] >= st and start_times[l] < ed:
                     note_list = start_dict[start_times[l]]
                     status.update(note_list)
                     l += 1
                     for j in note_list:
                         onset[i, notes_dict[j][2]] = 1
-                
+              
                 for j in status:
                     activation[i, notes_dict[j][2]] = 1
 
                 while r < len(end_times) and end_times[r] >= st and end_times[r] < ed:
-                    status.discard(end_dict[end_times[r]])
+                    note_list = end_dict[end_times[r]]
+                    status = status - note_list
                     r += 1
-            
-            '''
-            if frame_num > 1000:
-                x1mesh, x2mesh = np.meshgrid(np.arange(0, 1000),
-                            np.arange(0, cfg.PITCH_NUM))
-                print(cfg.PITCH_NUM, x1mesh.shape, onset.T.shape)
-                plt.yticks(np.arange(0, cfg.PITCH_NUM))
-                plt.pcolormesh(x1mesh, x2mesh, onset.T[:,:1000])
-                plt.show()
-                plt.close()
+            '''  
+            if frame_num > 200:
+                plot_matrix(activation.T)
+                assert(False)
             '''
             # Save the sample to a file
             sample = {'Frames': frames, 'Activation': activation, 'Onset': onset}
@@ -125,7 +162,7 @@ def preprocess(save_path=cfg.SEQ_SAMPLE_PATH, frame_size=cfg.FRAME_SIZE, frame_t
                 pickle.dump(sample, f)
             
         print('Total ' + str(cnt))
-        
+
 def main():
     preprocess()        
 
