@@ -17,7 +17,7 @@ INDEX_DICT = dict(zip(PITCH_LIST, list(range(PITCH_NUM))))
 
 # Hack to allow python to pick up the newly-installed fluidsynth lib. 
 # Tested under fluidsynth-1.1.9
-
+# Some changes were made to pyfluidsynth (181-198 lines are commented)
 import ctypes.util
 orig_ctypes_util_find_library = ctypes.util.find_library
 def proxy_find_library(lib):
@@ -26,6 +26,3 @@ def proxy_find_library(lib):
   else:
     return orig_ctypes_util_find_library(lib)
 ctypes.util.find_library = proxy_find_library
-
-# Some changes were made to pyfluidsynth (181-198 lines are commented)
-import fluidsynth

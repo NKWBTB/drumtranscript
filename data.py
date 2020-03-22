@@ -43,13 +43,13 @@ def plot_array(array, x_range = None, subplot = None):
 
 def plot_matrix(mat, x_range = None, y_range = None):
     if type(x_range) == type(None):
-        x_range = np.arange(mat.shape[0])
+        x_range = np.arange(mat.shape[1])
     if type(y_range) == type(None):
-        y_range = np.arange(mat.shape[1])
-    x1mesh, x2mesh = np.meshgrid(y_range, x_range)
+        y_range = np.arange(mat.shape[0])
+    x1mesh, x2mesh = np.meshgrid(x_range, y_range)
     plt.figure()
     plt.yticks(y_range)
-    plt.pcolormesh(x1mesh, x2mesh, mat[x_range[0]:x_range[-1]+1, y_range[0]:y_range[-1]+1])
+    plt.pcolormesh(x1mesh, x2mesh, mat[y_range[0]:y_range[-1]+1, x_range[0]:x_range[-1]+1])
     plt.show()
     plt.close()
 
@@ -70,6 +70,8 @@ def preprocess(save_path=cfg.SEQ_SAMPLE_PATH, frame_size=cfg.FRAME_SIZE, frame_t
     '''
     dataset = tfds.load(name=cfg.TFDS_NAME, data_dir=cfg.TFDS_DATA_DIR)
 
+    synth_except = False
+
     for split in cfg.TFDS_SPLITS:
         dir = os.path.join(save_path, str(frame_time) + '_ms', split)
         if not os.path.exists(dir):
@@ -86,13 +88,18 @@ def preprocess(save_path=cfg.SEQ_SAMPLE_PATH, frame_size=cfg.FRAME_SIZE, frame_t
             midi = features['midi'].numpy()
             audio = features['audio'].numpy()
             sequence = mm.midi_to_note_sequence(midi)
-            synthed_audio = midi_synth.fluidsynth(sequence, cfg.SAMPLE_RATE)
+            if not synth_except:
+                try:
+                    synthed_audio = midi_synth.fluidsynth(sequence, cfg.SAMPLE_RATE)
+                    scipy.io.wavfile.write(os.path.join(dir,'%i_syn.wav' % cnt), cfg.SAMPLE_RATE, synthed_audio)
+                except Exception as e:
+                    print("\nException caught:\n", e, "\n")
+                    synth_except = True
 
             # fig = mm.plot_sequence(sequence, show_figure=False)
             # export_png(fig, filename=os.path.join(dir, "%i.png" % cnt))
 
             scipy.io.wavfile.write(os.path.join(dir, '%i.wav' % cnt), cfg.SAMPLE_RATE, audio)
-            scipy.io.wavfile.write(os.path.join(dir,'%i_syn.wav' % cnt), cfg.SAMPLE_RATE, synthed_audio)
             mm.sequence_proto_to_midi_file(sequence, os.path.join(dir, '%i.mid' % cnt))
 
             '''
