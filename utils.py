@@ -5,5 +5,5 @@ def list_files(path, extension = ''):
     filtered = []
     for file in files:
         if file.split('.')[-1] == extension:
-            filtered.append(file)
+            filtered.append(os.path.join(path, file))
     return filtered
