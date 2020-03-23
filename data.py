@@ -12,8 +12,6 @@ from matplotlib.colors import ListedColormap
 from bokeh.io import export_png
 import scipy
 
-tf.enable_eager_execution()
-
 def parse_sequence(sequence):
     notes = {'start_time': [], 'end_time': [], 'pitch': [], 'velocity': [], 'instrument': [], 'is_drum': []}
     for note in sequence.notes:
@@ -52,6 +50,11 @@ def plot_matrix(mat, x_range = None, y_range = None):
     plt.pcolormesh(x1mesh, x2mesh, mat[y_range[0]:y_range[-1]+1, x_range[0]:x_range[-1]+1])
     plt.show()
     plt.close()
+
+def read_sample(path):
+    with open(path, 'rb') as f:
+        sample = pickle.load(f)
+        return sample
 
 def preprocess(save_path=cfg.SEQ_SAMPLE_PATH, frame_size=cfg.FRAME_SIZE, frame_time = cfg.FRAME_TIME):
     '''Preprocess the dataset into samples in sequence_level
@@ -171,6 +174,7 @@ def preprocess(save_path=cfg.SEQ_SAMPLE_PATH, frame_size=cfg.FRAME_SIZE, frame_t
         print('Total ' + str(cnt))
 
 def main():
+    tf.enable_eager_execution()
     preprocess()        
 
 if __name__ == '__main__':
