@@ -133,3 +133,4 @@ dmypy.json
 *.png
 *.mid
 *.dll
+/models

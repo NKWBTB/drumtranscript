@@ -15,6 +15,9 @@ PITCH_LIST = [22, 26, 36, 37, 38, 40, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52
 PITCH_NUM = len(PITCH_LIST)
 INDEX_DICT = dict(zip(PITCH_LIST, list(range(PITCH_NUM))))
 
+DEFAULT_VELOCITY = 80
+DEFAULT_QPM = 120
+
 # Hack to allow python to pick up the newly-installed fluidsynth lib. 
 # Tested under fluidsynth-1.1.9
 # Some changes were made to pyfluidsynth (181-198 lines are commented)

@@ -1,15 +1,16 @@
 import config as cfg
+import utils
 import os
 import tensorflow as tf
 import tensorflow_datasets as tfds
 import magenta.music as mm
 from magenta.music import midi_synth
-import magenta
+from magenta.music.protobuf import music_pb2
 import numpy as np
 import matplotlib.pyplot as plt
-import pickle
 from matplotlib.colors import ListedColormap
 from bokeh.io import export_png
+import pickle
 import scipy
 
 def parse_sequence(sequence):
@@ -27,36 +28,75 @@ def parse_sequence(sequence):
 
     return notes, total_time, qpm
 
-def plot_array(array, x_range = None, subplot = None):
-    if type(x_range) == type(None):
-        x_range = np.arange(array.shape[0])
-    if type(subplot) == type(None):
-        plt.figure()
-    else:
-        plt.subplot(subplot)
-    plt.plot(x_range, array)
-    if type(subplot) == type(None):
-        plt.show()
-        plt.close()
-
-def plot_matrix(mat, x_range = None, y_range = None):
-    if type(x_range) == type(None):
-        x_range = np.arange(mat.shape[1])
-    if type(y_range) == type(None):
-        y_range = np.arange(mat.shape[0])
-    x1mesh, x2mesh = np.meshgrid(x_range, y_range)
-    plt.figure()
-    plt.yticks(y_range)
-    plt.pcolormesh(x1mesh, x2mesh, mat[y_range[0]:y_range[-1]+1, x_range[0]:x_range[-1]+1])
-    plt.show()
-    plt.close()
-
 def read_sample(path):
     with open(path, 'rb') as f:
         sample = pickle.load(f)
         return sample
 
-def preprocess(save_path=cfg.SEQ_SAMPLE_PATH, frame_size=cfg.FRAME_SIZE, frame_time = cfg.FRAME_TIME):
+def matrix2sequence(activation, frame_time=cfg.FRAME_TIME, onset=None):
+    '''Given acvtivation and onset(optional) matrix to recover the notesequence
+
+    Args:
+        activation: activation matrix
+        frame_time: time period of a frame in millisecond(ms)
+        onset: onset matrix, optional
+
+    Returns:
+        A notesequence recovered from the inputs.
+    '''
+    activation = np.append(activation, [np.zeros(activation[0].shape)], axis=0)
+    if type(onset) != type(None):
+        onset = np.append(onset, [np.zeros(onset[0].shape)], axis=0)
+        activation = np.logical_or(activation, onset)
+    
+    sequence = music_pb2.NoteSequence()
+    frame_num = activation.shape[0]
+    start_times = {}
+    
+    def handle_inactive(t, i, j):
+        pitch = cfg.PITCH_LIST[j]
+        if pitch in start_times:
+            st = start_times[pitch]
+            sequence.notes.add(pitch=pitch, 
+                            start_time=st,
+                            end_time=t,
+                            is_drum=True,
+                            instrument=10,
+                            velocity=cfg.DEFAULT_VELOCITY)
+            del start_times[pitch]
+
+    def handle_active(t, i, j):
+        pitch = cfg.PITCH_LIST[j]
+        if type(onset) != type(None):
+            if onset[i][j]:
+                if pitch in start_times:
+                    handle_inactive(t, i, j)
+                start_times[pitch] = t
+        else:
+            if not pitch in start_times:
+                start_times[pitch] = t
+
+    for i in range(frame_num):
+        t = frame_time * (i + 0.5) / 1000.0
+        for j in range(cfg.PITCH_NUM):
+            if activation[i, j]:
+                handle_active(t, i, j)
+            else:
+                handle_inactive(t, i, j)
+    
+    sequence.total_time = activation.shape[0] * frame_time / 1000.0
+    return sequence
+
+def audio2frame(audio, frame_size):
+    # Padding audio
+    pad_num = frame_size - audio.shape[0] % frame_size
+    if pad_num:
+        audio = np.concatenate((audio, np.zeros((pad_num), dtype=audio.dtype)))
+    frame_num = int(audio.shape[0]/frame_size)
+    frames = np.reshape(audio, (frame_num, frame_size))
+    return frames, frame_num
+
+def preprocess(save_path=cfg.SEQ_SAMPLE_PATH, frame_size=cfg.FRAME_SIZE, frame_time=cfg.FRAME_TIME):
     '''Preprocess the dataset into samples in sequence_level
     
     Args:
@@ -90,7 +130,10 @@ def preprocess(save_path=cfg.SEQ_SAMPLE_PATH, frame_size=cfg.FRAME_SIZE, frame_t
             
             midi = features['midi'].numpy()
             audio = features['audio'].numpy()
+            frames, frame_num = audio2frame(audio, frame_size)
             sequence = mm.midi_to_note_sequence(midi)
+            # fig = mm.plot_sequence(sequence, show_figure=False)
+            # export_png(fig, filename=os.path.join(dir, "%i.png" % cnt))
             if not synth_except:
                 try:
                     synthed_audio = midi_synth.fluidsynth(sequence, cfg.SAMPLE_RATE)
@@ -98,28 +141,16 @@ def preprocess(save_path=cfg.SEQ_SAMPLE_PATH, frame_size=cfg.FRAME_SIZE, frame_t
                 except Exception as e:
                     print("\nException caught:\n", e, "\n")
                     synth_except = True
-
-            # fig = mm.plot_sequence(sequence, show_figure=False)
-            # export_png(fig, filename=os.path.join(dir, "%i.png" % cnt))
-
             scipy.io.wavfile.write(os.path.join(dir, '%i.wav' % cnt), cfg.SAMPLE_RATE, audio)
             mm.sequence_proto_to_midi_file(sequence, os.path.join(dir, '%i.mid' % cnt))
 
             '''
             plt.figure()
-            plot_array(audio, subplot=211)
-            plot_array(synthed_audio, subplot=212)
+            utils.plot_array(audio, subplot=211)
+            utils.plot_array(synthed_audio, subplot=212)
             plt.show()
             plt.close()
             '''
-
-            # Padding audio to generate frames
-            pad_num = frame_size - audio.shape[0] % frame_size
-            if pad_num:
-                audio = np.concatenate((audio, np.zeros((pad_num), dtype=audio.dtype)))
-            frame_num = int(audio.shape[0]/frame_size)
-            frames = np.reshape(audio, (frame_num, frame_size))
-            
             # Sort the notes by start_time and end_time to do a sweep
             notes = [[note.start_time, note.end_time, cfg.INDEX_DICT[note.pitch]] for note in sequence.notes]
             # pitch = set([cfg.INDEX_DICT[note.pitch] for note in sequence.notes])
@@ -162,7 +193,7 @@ def preprocess(save_path=cfg.SEQ_SAMPLE_PATH, frame_size=cfg.FRAME_SIZE, frame_t
                     r += 1
             '''  
             if frame_num > 200:
-                plot_matrix(activation.T)
+                utils.plot_matrix(activation.T)
                 assert(False)
             '''
             # Save the sample to a file
