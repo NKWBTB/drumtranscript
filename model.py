@@ -23,6 +23,10 @@ class BaseModel:
         '''
         raise NotImplementedError
 
+    def evaluate(self):
+        ''' Report the precision/recall/f-measure of the model'''
+        raise NotImplementedError
+
     def save(self, path):
         ''' Save the model to the path'''
         raise NotImplementedError
@@ -91,8 +95,40 @@ class BiLSTM(BaseModel):
         return history
 
     def predict(self, frames, threshold=0.5):
-        activation = model.predict(frames)
+        if frames.ndim == 2:
+            frames = np.array([frames], dtype=np.float32)
+        activation = np.array(self.model.predict(frames) >= threshold, dtype=int)
+        return activation, None
     
+    def evaluate(self, test_files):
+        thresholds = np.arange(0, 1, 0.05)
+        precision, recall, f_measure = [], [], []
+        for threshold in thresholds:
+            print(threshold)
+            TP = np.zeros(cfg.PITCH_NUM) + 1e-12
+            FP = np.zeros(cfg.PITCH_NUM)
+            FN = np.zeros(cfg.PITCH_NUM)
+            cnt = 0
+            for file in test_files:
+                cnt += 1
+                if cnt % 10 == 0:
+                    print(cnt)
+                sample = read_sample(file)
+                y_true = sample['Activation']
+                y_pred, onset = self.predict(sample['Frames'], threshold=threshold)
+                y_pred = y_pred[0]
+                TP += np.sum(np.logical_and(y_true, y_pred), axis=0)
+                FP += np.sum(np.logical_and(y_true ^ 1, y_pred), axis=0)
+                FN += np.sum(np.logical_and(y_true, y_pred ^ 1), axis=0)
+            print(TP)
+            print(FP)
+            print(FN)
+            precision.append(TP/(TP+FP))
+            recall.append(TP/(TP+FN))
+            f_measure.append(2*TP/(2*TP+FP+FN))
+        
+        return thresholds, np.array(precision), np.array(recall), np.array(f_measure)
+
     def save(self, path):
         self.model.save(path)
 
@@ -119,6 +155,6 @@ if __name__ == "__main__":
     val_files = list_files(val_path, 'pickle')
     
     model = BiLSTM()
-    
+
     #model.train(train_files, val_files)
     # train('Bi-LSTM')
