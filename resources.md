@@ -18,9 +18,11 @@
 * [Drum transcription from polyphonic music with recurrent neural networks](https://ieeexplore.ieee.org/abstract/document/7952146)
 * [ Automatic Drum Transcription using Bi-directional Recurrent Neural Networks](http://www.open-access.bcu.ac.uk/4101/1/AUTOMATIC%20DRUM%20TRANSCRIPTION.pdf)
 * [Drum Transcription via Joint Beat and Drum Modeling Using Convolutional Recurrent Neural Networks](https://pdfs.semanticscholar.org/2973/2cded1cfe0d17ed2a04ee7cd6a92ad4ce029.pdf)
+* [Improving Perceptual Quality of Drum Transcription with the Expanded Groove MIDI Dataset](https://arxiv.org/abs/2004.00188)
 
 ## Others
 * [Hello Magenta Colab notebook](https://colab.research.google.com/notebooks/magenta/hello_magenta/hello_magenta.ipynb)
 * [Onsets and Frames: Dual-Objective Piano Transcription](https://magenta.tensorflow.org/onsets-frames)
 * [Hands-On Music Generation with Magenta](https://www.google.com/books/edition/Hands_On_Music_Generation_with_Magenta/SUvODwAAQBAJ?hl=en&gbpv=1&bsq=midi)
 * [Python Comment Style](https://zh-google-styleguide.readthedocs.io/en/latest/google-python-styleguide/python_style_rules/#comments)
+* [Improving Perceptual Quality of Drum Transcription with the Expanded Groove MIDI Dataset](https://magenta.tensorflow.org/oaf-drums)
