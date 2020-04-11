@@ -7,6 +7,9 @@ TFDS_SPLITS = ['train', 'validation', 'test']
 SEQ_SAMPLE_PATH = "F:\\Dataset\\drum"
 
 # Frame settings
+MIN_SPLIT_LENGTH = 0
+MAX_SPLIT_LENGTH = 12
+
 FRAME_TIME = 10
 SAMPLE_RATE = 16000
 FRAME_SIZE = int(FRAME_TIME / 1000.0 * SAMPLE_RATE)
@@ -17,6 +20,11 @@ INDEX_DICT = dict(zip(PITCH_LIST, list(range(PITCH_NUM))))
 
 DEFAULT_VELOCITY = 80
 DEFAULT_QPM = 120
+
+SPECTROGRAM = True
+N_MELS = 250
+FMIN = 30.0
+HTK = True
 
 # Hack to allow python to pick up the newly-installed fluidsynth lib. 
 # Tested under fluidsynth-1.1.9
