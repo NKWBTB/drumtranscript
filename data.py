@@ -20,6 +20,14 @@ import scipy
 import math
 import librosa
 
+def parse_sequence(sequence):
+    notes = {}
+    for note in sequence.notes:
+        notes.setdefault(note.pitch, []).append([note.start_time, note.end_time])
+    for key in notes:
+        notes[key] = np.array(notes[key])
+    return notes
+
 def read_sample(path):
     with open(path, 'rb') as f:
         sample = pickle.load(f)
@@ -189,8 +197,8 @@ def preprocess(save_path=cfg.SEQ_SAMPLE_PATH, frame_size=cfg.FRAME_SIZE, frame_t
                         print("\nException caught:\n", e, "\n")
                         synth_except = True
                 scipy.io.wavfile.write(os.path.join(dir, '%i_%i.wav' % (cnt, batch)), cfg.SAMPLE_RATE, audio)
-                mm.sequence_proto_to_midi_file(sequence, os.path.join(dir, '%i_%i.mid' % (cnt, batch)))
                 '''
+                mm.sequence_proto_to_midi_file(sequence, os.path.join(dir, '%i_%i.mid' % (cnt, batch)))
                 '''
                 plt.figure()
                 utils.plot_array(audio, subplot=211)
@@ -244,7 +252,7 @@ def preprocess(save_path=cfg.SEQ_SAMPLE_PATH, frame_size=cfg.FRAME_SIZE, frame_t
                     assert(False)
                 '''
                 # Save the sample to a file
-                sample = {'Frames': frames, 'Activation': activation, 'Onset': onset}
+                sample = {'Frames': frames, 'Activation': activation, 'Onset': onset, 'Sequence': parse_sequence(sequence)}
 
                 with open(os.path.join(dir, '%i_%i.pickle' % (cnt, batch)), 'wb') as f:
                     pickle.dump(sample, f)

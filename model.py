@@ -115,34 +115,39 @@ class BiLSTM(BaseModel):
         activation = np.array(self.model.predict(frames) >= threshold, dtype=int)
         return activation, None
     
-    def evaluate(self, test_files):
-        thresholds = np.arange(0, 1, 0.05)
-        precision, recall, f_measure = [], [], []
-        for threshold in thresholds:
-            print(threshold)
-            TP = np.zeros(cfg.PITCH_NUM) + 1e-12
-            FP = np.zeros(cfg.PITCH_NUM)
-            FN = np.zeros(cfg.PITCH_NUM)
+    def evaluate(self, test_files, thresholds=np.array([0.5])):
+        import mir_eval
+        from data import matrix2sequence, parse_sequence
+        metrics = np.zeros((thresholds.shape[0], cfg.PITCH_NUM, 3), dtype=float)
+        for i in range(thresholds.shape[0]):
             cnt = 0
+            sample_num = np.zeros((cfg.PITCH_NUM, 1))
             for file in test_files:
                 cnt += 1
                 if cnt % 10 == 0:
                     print(cnt)
                 sample = read_sample(file)
-                y_true = sample['Onset']
-                y_pred, onset = self.predict(sample['Frames'], threshold=threshold)
-                y_pred = y_pred[0]
-                TP += np.sum(np.logical_and(y_true, y_pred), axis=0)
-                FP += np.sum(np.logical_and(y_true ^ 1, y_pred), axis=0)
-                FN += np.sum(np.logical_and(y_true, y_pred ^ 1), axis=0)
-            print(TP)
-            print(FP)
-            print(FN)
-            precision.append(TP/(TP+FP))
-            recall.append(TP/(TP+FN))
-            f_measure.append(2*TP/(2*TP+FP+FN))
+                y_pred, _ = self.predict(sample['Frames'], threshold=thresholds[i])
+                pred_sequence = matrix2sequence(y_pred[0], onset=y_pred[0])
+
+                gt_notes = sample['Sequence']
+                pred_notes = parse_sequence(pred_sequence)
+
+                for j in cfg.PITCH_LIST:
+                    if (not j in gt_notes) and (not j in pred_notes):
+                        continue
+                    ref_intervals = gt_notes.get(j, np.zeros((0, 2), dtype=float))
+                    est_intervals = pred_notes.get(j, np.zeros((0, 2), dtype=float))
+                    p, r, f = mir_eval.transcription.onset_precision_recall_f1(ref_intervals, est_intervals)
+                    
+                    k = cfg.INDEX_DICT[j]
+                    sample_num[k, 0] += 1
+                    metrics[i, k, 0] += p
+                    metrics[i, k, 1] += r
+                    metrics[i, k, 2] += f
+            metrics[i] /= sample_num
         
-        return thresholds, np.array(precision), np.array(recall), np.array(f_measure)
+        return metrics
 
     def save(self, path):
         self.model.save(path)
