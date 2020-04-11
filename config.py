@@ -7,7 +7,7 @@ TFDS_SPLITS = ['train', 'validation', 'test']
 SEQ_SAMPLE_PATH = "F:\\Dataset\\drum"
 
 # Frame settings
-MIN_SPLIT_LENGTH = 0
+MIN_SPLIT_LENGTH = 5
 MAX_SPLIT_LENGTH = 12
 
 FRAME_TIME = 10
@@ -25,6 +25,10 @@ SPECTROGRAM = True
 N_MELS = 250
 FMIN = 30.0
 HTK = True
+
+NUM_EPOCHS = 60
+BATCH_SIZE = 512
+INPUT_SIZE = N_MELS if SPECTROGRAM else FRAME_SIZE
 
 # Hack to allow python to pick up the newly-installed fluidsynth lib. 
 # Tested under fluidsynth-1.1.9

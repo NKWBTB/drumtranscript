@@ -1,10 +1,13 @@
 import keras
-from keras.layers import LSTM, Dense, Input, Bidirectional
+from keras.layers import LSTM, Dense, Input, Bidirectional, Conv2D, Flatten
+from keras.layers import BatchNormalization, MaxPooling2D, Dropout, Reshape
 from keras.models import Model
 import config as cfg
 import os
 from data import read_sample
 from utils import list_files
+import random
+import math
 import numpy as np
 
 class BaseModel:
@@ -41,21 +44,32 @@ class BiLSTM(BaseModel):
         self.checkpoint_path = "models/Bi-LSTM/{epoch:d}.h5"
         self.checkpoint_dir = os.path.dirname(self.checkpoint_path)
         self.model = None
+        self.batch_size = cfg.BATCH_SIZE
 
-    def build_model(self, input_shape=(None, cfg.FRAME_SIZE)):
+    def build_model(self, input_shape=(None, cfg.INPUT_SIZE)):
         input = Input(shape=input_shape, dtype='float32')
         x = Bidirectional(LSTM(128, return_sequences=True))(input)
         x = Dense(128, activation='relu')(x)
         preds = Dense(cfg.PITCH_NUM, activation='sigmoid')(x)
         self.model = Model(input, preds)
 
-    def data_generator(self, filelist):
+    def data_generator(self, filelist, batch_size=1):
         while 1:
-            for file in filelist:
-                sample = read_sample(file)
-                x = [np.array([sample['Frames']], dtype=np.float32)]
-                y = [np.array([sample['Activation']], dtype=int)]
-                yield (x, y)
+            random.shuffle(filelist)
+            num = len(filelist)
+            cnt = 0
+            x, y = [], []
+            for i in range(num):
+                sample = read_sample(filelist[i])
+                x.append(sample['Frames'])
+                y.append(sample['Onset'])
+                cnt += 1
+                if cnt == batch_size or i == num-1:
+                    x = np.array(x)
+                    y = np.array(y)
+                    cnt = 0
+                    yield (x, y)
+                    x, y = [], []
     
     def last_epoch(self):
         checkpoints = os.listdir(self.checkpoint_dir)
@@ -65,7 +79,8 @@ class BiLSTM(BaseModel):
         return last
 
     def train(self, train_files, val_files):
-        num_epochs = 60
+        num_epochs = cfg.NUM_EPOCHS
+        trainning_steps = int(math.ceil(len(train_files) / self.batch_size))
         # checkpoint settings
         cp_callback = keras.callbacks.ModelCheckpoint(
             filepath=self.checkpoint_path, 
@@ -84,8 +99,8 @@ class BiLSTM(BaseModel):
             self.load(os.path.join(self.checkpoint_dir, str(init_epoch)+'.h5'))
         
         self.model.summary()
-        history = self.model.fit_generator(self.data_generator(train_files), 
-                                        epochs=num_epochs, initial_epoch=init_epoch, steps_per_epoch=len(train_files), 
+        history = self.model.fit_generator(self.data_generator(train_files, self.batch_size), 
+                                        epochs=num_epochs, initial_epoch=init_epoch, steps_per_epoch=trainning_steps, 
                                         validation_data=self.data_generator(val_files), validation_steps=len(val_files),
                                         callbacks=[cp_callback, keras.callbacks.EarlyStopping(monitor='val_loss',
                                                                                             min_delta=0,
@@ -114,7 +129,7 @@ class BiLSTM(BaseModel):
                 if cnt % 10 == 0:
                     print(cnt)
                 sample = read_sample(file)
-                y_true = sample['Activation']
+                y_true = sample['Onset']
                 y_pred, onset = self.predict(sample['Frames'], threshold=threshold)
                 y_pred = y_pred[0]
                 TP += np.sum(np.logical_and(y_true, y_pred), axis=0)
@@ -141,10 +156,40 @@ class SimpleLSTM(BiLSTM):
         self.checkpoint_dir = os.path.dirname(self.checkpoint_path)
         self.model = None
     
-    def build_model(self, input_shape=(None, cfg.FRAME_SIZE)):
+    def build_model(self, input_shape=(None, cfg.INPUT_SIZE)):
         input = Input(shape=input_shape, dtype='float32')
         x = LSTM(128, return_sequences=True)(input)
         x = Dense(128, activation='relu')(x)
+        preds = Dense(cfg.PITCH_NUM, activation='sigmoid')(x)
+        self.model = Model(input, preds)
+
+class OaF_Drum(BiLSTM):
+    def __init__(self):
+        self.checkpoint_path = "models/OaF_Drum/{epoch:d}.h5"
+        self.checkpoint_dir = os.path.dirname(self.checkpoint_path)
+        self.model = None
+        self.batch_size = 16
+    
+    def build_model(self, input_shape=(None, cfg.INPUT_SIZE), use_lstm=True):
+        input = Input(shape=input_shape, dtype='float32')
+        reshape = Reshape((-1, cfg.INPUT_SIZE, 1))(input)
+        x = Conv2D(16, (3,3), padding='SAME')(reshape)
+        x = BatchNormalization()(x)
+        x = Conv2D(16, (3,3), padding='SAME')(x)
+        x = BatchNormalization()(x)
+        x = MaxPooling2D((1, 2), strides=(1, 2))(x)
+        x = Dropout(0.75)(x)
+        x = Conv2D(32, (3,3), padding='SAME')(x)
+        x = BatchNormalization()(x)
+        x = MaxPooling2D((1, 2), strides=(1, 2))(x)
+        x = Dropout(0.75)(x)
+        dim = x.get_shape()
+        x = Reshape((-1, int(dim[2]*dim[3])))(x)
+        x = Dense(256)(x)
+        x = Dropout(0.5)(x)
+        if use_lstm:
+            x = Bidirectional(LSTM(64, return_sequences=True))(x)
+            x = Dropout(0.5)(x)
         preds = Dense(cfg.PITCH_NUM, activation='sigmoid')(x)
         self.model = Model(input, preds)
 
@@ -154,7 +199,5 @@ if __name__ == "__main__":
     val_path = os.path.join(cfg.SEQ_SAMPLE_PATH, str(cfg.FRAME_TIME) + '_ms', 'validation')
     val_files = list_files(val_path, 'pickle')
     
-    model = BiLSTM()
-
-    #model.train(train_files, val_files)
-    # train('Bi-LSTM')
+    model = OaF_Drum()
+    model.train(train_files, val_files)

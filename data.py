@@ -102,7 +102,7 @@ def audio2frame(audio, frame_size, spectrogram=False):
 # Modified from magenta.models.onsets_frames_transcription.audio_label_data_utils.process_record
 def split2batch(audio, sequence):
     from magenta.models.onsets_frames_transcription.audio_label_data_utils import find_split_points
-    pad_num = audio.shape[0] - int(math.ceil(sequence.total_time * cfg.SAMPLE_RATE))
+    pad_num = int(math.ceil(sequence.total_time * cfg.SAMPLE_RATE)) - audio.shape[0]
     if pad_num > 0:
         audio = np.concatenate((audio, np.zeros((pad_num), dtype=audio.dtype)))
     
@@ -117,8 +117,7 @@ def split2batch(audio, sequence):
         split_audio, split_seq = audio, sequence 
         if not (start == 0 and end == sequence.total_time):
             split_seq = sequences_lib.extract_subsequence(sequence, start, end)
-            split_audio = audio_io.crop_samples(audio, cfg.SAMPLE_RATE, start, end - start)
-            
+        split_audio = audio_io.crop_samples(audio, cfg.SAMPLE_RATE, start, end - start)
         pad_num = int(math.ceil(cfg.MAX_SPLIT_LENGTH * cfg.SAMPLE_RATE)) - split_audio.shape[0]
         if pad_num > 0:
             split_audio = np.concatenate((split_audio, np.zeros((pad_num), dtype=split_audio.dtype)))

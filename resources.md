@@ -16,7 +16,7 @@
 ### Drum transcription
 * [Recurrent Neural Networks for Drum Transcription](https://pdfs.semanticscholar.org/bbf1/83ec99ccb52d60f7189bda02a0da76d2c598.pdf)
 * [Drum transcription from polyphonic music with recurrent neural networks](https://ieeexplore.ieee.org/abstract/document/7952146)
-* [ Automatic Drum Transcription using Bi-directional Recurrent Neural Networks](http://www.open-access.bcu.ac.uk/4101/1/AUTOMATIC%20DRUM%20TRANSCRIPTION.pdf)
+* [Automatic Drum Transcription using Bi-directional Recurrent Neural Networks](http://www.open-access.bcu.ac.uk/4101/1/AUTOMATIC%20DRUM%20TRANSCRIPTION.pdf)
 * [Drum Transcription via Joint Beat and Drum Modeling Using Convolutional Recurrent Neural Networks](https://pdfs.semanticscholar.org/2973/2cded1cfe0d17ed2a04ee7cd6a92ad4ce029.pdf)
 * [Improving Perceptual Quality of Drum Transcription with the Expanded Groove MIDI Dataset](https://arxiv.org/abs/2004.00188)
 
