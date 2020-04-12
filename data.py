@@ -144,10 +144,15 @@ def synthesis_audio(sequence):
         synthed_audio = synthed_audio[:int(math.ceil(cfg.MAX_SPLIT_LENGTH * cfg.SAMPLE_RATE))]
     return synthed_audio
    
-def preprocess(save_path=cfg.SEQ_SAMPLE_PATH, frame_size=cfg.FRAME_SIZE, frame_time=cfg.FRAME_TIME, spectrogram=cfg.SPECTROGRAM):
+def preprocess(dataset = tfds.load(name=cfg.TFDS_NAME, data_dir=cfg.TFDS_DATA_DIR),
+    save_path=cfg.SEQ_SAMPLE_PATH, 
+    frame_size=cfg.FRAME_SIZE, 
+    frame_time=cfg.FRAME_TIME, 
+    spectrogram=cfg.SPECTROGRAM):
     '''Preprocess the dataset into samples in sequence_level
     
     Args:
+        dataset: dataset in tfds format
         save_path: path to save the sample files
         frame_size: number of point in a frame
         frame_time: time period of a frame in millisecond(ms)
@@ -159,7 +164,6 @@ def preprocess(save_path=cfg.SEQ_SAMPLE_PATH, frame_size=cfg.FRAME_SIZE, frame_t
         'Activation': np.array((frame_num, PITCH_NUM)), 
         'Onset': np.array((frame_num, PITCH_NUM))}
     '''
-    dataset = tfds.load(name=cfg.TFDS_NAME, data_dir=cfg.TFDS_DATA_DIR)
 
     synth_except = False
 

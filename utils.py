@@ -1,6 +1,7 @@
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+import inspect
 
 def plot_array(array, x_range = None, subplot = None):
     if type(x_range) == type(None):
@@ -33,3 +34,7 @@ def list_files(path, extension = ''):
         if file.split('.')[-1] == extension:
             filtered.append(os.path.join(path, file))
     return filtered
+
+def list_class(module):
+    return [m[0] for m in inspect.getmembers(module, inspect.isclass) \
+        if m[1].__module__ == module.__name__]

@@ -1,55 +1,89 @@
 
-import config as cfg
-from data import *
-from utils import *
-import magenta.music as mm
 import os
-import numpy as np
-from model import *
+import argparse
+import librosa
+import scipy
+import config as cfg
+import utils
+
+def transcribe(m, input, output):
+    import magenta.music as mm
+    import data
+    wav, _ = librosa.load(input, sr=cfg.SAMPLE_RATE)
+    frames, _ = data.audio2frame(wav, cfg.FRAME_SIZE, cfg.SPECTROGRAM)
+    onset, _ = m.predict(frames)
+    sequence = data.matrix2sequence(onset[0], onset=onset[0])
+    mm.sequence_proto_to_midi_file(sequence, output)
 
 def main():
+    import tensorflow as tf
+    tf.enable_eager_execution()
+    import model
+    import data
+
+    models_available = utils.list_class(model)
+    models_available.remove('BaseModel')
+
+    parser = argparse.ArgumentParser(
+            description="Transcribe the drum solo from a wave file to a midi file")
+    parser.add_argument('--task', '-t', required=True,
+                        choices=['pre', 'train', 'test', 'trans'],
+                        help="The task you want to execute. \
+                        pre: preprocess the dataset;\
+                        train: train the model;\
+                        test: test the model performance on testset;\
+                        trans: transcibe using a trained model.")
+    parser.add_argument('--model', '-m',
+                        choices=models_available,
+                        help="The type of model used.")
+    parser.add_argument('--model_path', '-p',
+                        help="The model file used for 'trans' and 'test'.")
+    parser.add_argument('--input', '-i',
+                        help="The wave input file for transcribe, only useful when task being 'trans'.")
+    parser.add_argument('--output', '-o', 
+                        help="The midi output file for transcribe, only useful when task being 'trans'.")
+    args = parser.parse_args()
+
+    if args.task == 'pre':
+        data.preprocess()
+        return
+
+    tf.disable_eager_execution()
+    if args.model is None:
+        print('\n\nError: --model must be specified!!')
+        return
+    m = getattr(model, args.model)()
+
+    train_path = os.path.join(cfg.SEQ_SAMPLE_PATH, str(cfg.FRAME_TIME) + '_ms', 'train')
+    train_files = utils.list_files(train_path, 'pickle')
+    val_path = os.path.join(cfg.SEQ_SAMPLE_PATH, str(cfg.FRAME_TIME) + '_ms', 'validation')
+    val_files = utils.list_files(val_path, 'pickle')
     test_path = os.path.join(cfg.SEQ_SAMPLE_PATH, str(cfg.FRAME_TIME) + '_ms', 'test')
-    test_files = list_files(test_path, 'pickle')
-    idx = 40
-    print(test_files[idx])
-    sample = read_sample(test_files[idx])
+    test_files = utils.list_files(test_path, 'pickle')
     
-    model = OaF_Drum()
-    model.load(os.path.join(model.checkpoint_dir, '8.h5'))    
+    if args.task == 'train':
+        m.train(train_files, val_files)
+        return
     
-    onset, _ = model.predict(sample['Frames'])
-
-    sequence1 = mm.midi_file_to_note_sequence(test_files[idx].split('.')[0] + '.mid')
-    print(sequence1.tempos[0])
-    fig = mm.plot_sequence(sequence1, show_figure=False)
-    export_png(fig, filename="test.png")
-
-    sequence2 = matrix2sequence(sample['Onset'], onset=sample['Onset'])
-    mm.sequence_proto_to_midi_file(sequence2, 'test.mid')
-    fig2 = mm.plot_sequence(sequence2, show_figure=False)
-    export_png(fig2, filename="test_gen.png")
-
-    sequence3 = matrix2sequence(onset[0], onset=onset[0])
-    mm.sequence_proto_to_midi_file(sequence3, 'pred.mid')
-    fig3 = mm.plot_sequence(sequence3, show_figure=False)
-    export_png(fig3, filename="pred.png")
+    if args.model_path is not None:
+        if not os.path.exists(args.model_path):
+            print('Model file does not exists.')
+            return -1
+        m.load(args.model_path)
+    else:
+        print('\n\nError: --model_path must be specified!!')
+        return -1
     
-    # thresholds = np.arange(0, 1, 0.1)
-    metrics = model.evaluate(test_files)
-    #precision = np.mean(metrics[:,:,0], axis=1)
-    #recall = np.mean(metrics[:,:,1], axis=1)
-    #f_measure = np.mean(metrics[:,:,2], axis=1)
-
-    #print(f_measure.shape)
-
-    import matplotlib.pyplot as plt
-    plt.figure()
-    #plt.plot(thresholds, f_measure)
-    plt.xticks(cfg.PITCH_LIST)
-    plt.bar(cfg.PITCH_LIST, metrics[0, :, 2])
-    plt.show()
-    plt.close()
-    
+    if args.task == 'test':
+        m.evaluate(test_files)
+    else:
+        if args.input is None or args.output is None:
+            print('\n\nError: --input and --output must be specified!!')
+            return -1
+        if not os.path.exists(args.input):
+            print('\n\nError: Input wav file does not exists.')
+            return -1
+        transcribe(m, args.input, args.output)
 
 if __name__ == "__main__":
     main()

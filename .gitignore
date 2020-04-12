@@ -132,6 +132,7 @@ dmypy.json
 .vscode
 *.png
 *.mid
+*.wav
 *.dll
 /models
 /.idea/.gitignore

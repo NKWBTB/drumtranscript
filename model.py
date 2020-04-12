@@ -9,6 +9,7 @@ from utils import list_files
 import random
 import math
 import numpy as np
+import matplotlib.pyplot as plt
 
 class BaseModel:
     def __init__(self):
@@ -147,6 +148,12 @@ class BiLSTM(BaseModel):
                     metrics[i, k, 2] += f
             metrics[i] /= sample_num
         
+        plt.figure()
+        plt.xticks(cfg.PITCH_LIST)
+        plt.bar(cfg.PITCH_LIST, metrics[0, :, 2])
+        plt.show()
+        plt.close()
+        
         return metrics
 
     def save(self, path):
@@ -160,6 +167,7 @@ class SimpleLSTM(BiLSTM):
         self.checkpoint_path = "models/LSTM/{epoch:d}.h5"
         self.checkpoint_dir = os.path.dirname(self.checkpoint_path)
         self.model = None
+        self.batch_size = cfg.BATCH_SIZE
     
     def build_model(self, input_shape=(None, cfg.INPUT_SIZE)):
         input = Input(shape=input_shape, dtype='float32')
