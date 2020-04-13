@@ -147,8 +147,9 @@ class BiLSTM(BaseModel):
                     metrics[i, k, 2] += f
             metrics[i] /= sample_num
         
-        plt.figure()
-        plt.xticks(cfg.PITCH_LIST)
+        plt.figure(figsize=(10, 5))
+        plt.ylim((0.0, 1.0))
+        plt.xticks(np.arange(cfg.PITCH_LIST), labels=cfg.PITCH_LIST)
         plt.bar(cfg.PITCH_LIST, metrics[0, :, 2])
         plt.show()
         plt.close()

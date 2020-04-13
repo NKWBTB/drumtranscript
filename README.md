@@ -56,6 +56,8 @@ Typical usages of the program:
     - ``SEQ_SAMPLE_PATH``: path to save the preprocessed samples.
     - Other optional settings:
         - ``FRAME_TIME``: The time of a frame used in millisecond(ms).
+        - ``USE_SYNTH_AUDIO``: Bool flag, set ``True`` to use synthesized audio.
+        - ``USE_MIXUP``: Bool flag, set ``True`` to use mixup audio.
         - ``SPECTROGRAM``: Bool flag, set ``True`` to use mel spectrogram feature.
         - ``NUM_EPOCHS``: Number of maxiumum epochs used for training.
         - ``BATCH_SIZE``: Default batch size used for training.
