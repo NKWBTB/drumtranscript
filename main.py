@@ -10,6 +10,7 @@ def transcribe(m, input, output):
     import magenta.music as mm
     import data
     wav, _ = librosa.load(input, sr=cfg.SAMPLE_RATE)
+    wav = librosa.util.normalize(wav)
     frames, _ = data.audio2frame(wav, cfg.FRAME_SIZE, cfg.SPECTROGRAM)
     onset, _ = m.predict(frames)
     sequence = data.matrix2sequence(onset[0], onset=onset[0])
@@ -25,7 +26,7 @@ def main():
     models_available.remove('BaseModel')
 
     parser = argparse.ArgumentParser(
-            description="Transcribe the drum solo from a wave file to a midi file")
+            description="Transcribe the drum solo from a wave file to a midi file.")
     parser.add_argument('--task', '-t', required=True,
                         choices=['pre', 'train', 'test', 'trans'],
                         help="The task you want to execute. \

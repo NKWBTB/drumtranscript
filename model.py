@@ -45,7 +45,6 @@ class BiLSTM(BaseModel):
         self.checkpoint_path = "models/Bi-LSTM/{epoch:d}.h5"
         self.checkpoint_dir = os.path.dirname(self.checkpoint_path)
         self.model = None
-        self.batch_size = cfg.BATCH_SIZE
 
     def build_model(self, input_shape=(None, cfg.INPUT_SIZE)):
         input = Input(shape=input_shape, dtype='float32')
@@ -79,9 +78,9 @@ class BiLSTM(BaseModel):
         last = max(epochs)
         return last
 
-    def train(self, train_files, val_files):
+    def train(self, train_files, val_files, batch_size=cfg.BATCH_SIZE):
         num_epochs = cfg.NUM_EPOCHS
-        trainning_steps = int(math.ceil(len(train_files) / self.batch_size))
+        trainning_steps = int(math.ceil(len(train_files) / batch_size))
         # checkpoint settings
         cp_callback = keras.callbacks.ModelCheckpoint(
             filepath=self.checkpoint_path, 
@@ -100,7 +99,7 @@ class BiLSTM(BaseModel):
             self.load(os.path.join(self.checkpoint_dir, str(init_epoch)+'.h5'))
         
         self.model.summary()
-        history = self.model.fit_generator(self.data_generator(train_files, self.batch_size), 
+        history = self.model.fit_generator(self.data_generator(train_files, batch_size), 
                                         epochs=num_epochs, initial_epoch=init_epoch, steps_per_epoch=trainning_steps, 
                                         validation_data=self.data_generator(val_files), validation_steps=len(val_files),
                                         callbacks=[cp_callback, keras.callbacks.EarlyStopping(monitor='val_loss',
@@ -167,7 +166,6 @@ class SimpleLSTM(BiLSTM):
         self.checkpoint_path = "models/LSTM/{epoch:d}.h5"
         self.checkpoint_dir = os.path.dirname(self.checkpoint_path)
         self.model = None
-        self.batch_size = cfg.BATCH_SIZE
     
     def build_model(self, input_shape=(None, cfg.INPUT_SIZE)):
         input = Input(shape=input_shape, dtype='float32')
@@ -181,7 +179,6 @@ class OaF_Drum(BiLSTM):
         self.checkpoint_path = "models/OaF_Drum/{epoch:d}.h5"
         self.checkpoint_dir = os.path.dirname(self.checkpoint_path)
         self.model = None
-        self.batch_size = 16
     
     def build_model(self, input_shape=(None, cfg.INPUT_SIZE), use_lstm=True):
         input = Input(shape=input_shape, dtype='float32')
@@ -213,4 +210,4 @@ if __name__ == "__main__":
     val_files = list_files(val_path, 'pickle')
     
     model = OaF_Drum()
-    model.train(train_files, val_files)
+    model.train(train_files, val_files, batch_size=16)
