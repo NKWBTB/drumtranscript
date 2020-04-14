@@ -306,11 +306,25 @@ def preprocess(dataset = tfds.load(name=cfg.TFDS_NAME, data_dir=cfg.TFDS_DATA_DI
             print('Mixup processing...')
             mixup(save_dir, cfg.MIXUP_NUM, cfg.MIXUP_THRESH, spectrogram, frame_size)
 
+def get_statistics(path):
+    files = utils.list_files(path, 'pickle')
+    sum = np.zeros((cfg.PITCH_NUM))
+    cnt = 0
+    for file in files:
+        cnt += 1
+        if cnt % 1000 == 0:
+            print(cnt) 
+        s = read_sample(file)
+        v = s['Statistics']
+        sum += v
+    print(sum)
+
 def main():
     #preprocess()
     train_path = os.path.join(cfg.SEQ_SAMPLE_PATH, str(cfg.FRAME_TIME) + '_ms', 'train')
-    # train_files = utils.list_files(train_path, 'pickle')
-    mixup(train_path, cfg.MIXUP_NUM, cfg.MIXUP_THRESH, cfg.SPECTROGRAM, cfg.FRAME_SIZE)        
+    # train_files = utils.list_files(train_path, 'pickle') 
+    # mixup(train_path, cfg.MIXUP_NUM, cfg.MIXUP_THRESH, cfg.SPECTROGRAM, cfg.FRAME_SIZE)
+    get_statistics(train_path)        
 
 if __name__ == '__main__':
     main()

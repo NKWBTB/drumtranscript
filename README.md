@@ -4,15 +4,14 @@ This project is a practice project for ML class. It aims at automatic drum music
 ## Prerequisites
 * Python 3.7
 * [Magenta](https://github.com/tensorflow/magenta)
-* [Keras](https://keras.io/)
 
 Installation:
 ```
-pip install magenta keras
+pip install magenta
 ```
 If use GPU (Optional):
 ```
-pip install magenta-gpu keras
+pip install magenta-gpu
 ```
 ## Usage
 The files are organized as follows:

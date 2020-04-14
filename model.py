@@ -1,7 +1,8 @@
-import keras
-from keras.layers import LSTM, Dense, Input, Bidirectional, Conv2D, Flatten
-from keras.layers import BatchNormalization, MaxPooling2D, Dropout, Reshape
-from keras.models import Model
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras.layers import LSTM, Dense, Input, Bidirectional, Conv2D, Flatten
+from tensorflow.keras.layers import BatchNormalization, MaxPooling2D, Dropout, Reshape
+from tensorflow.keras.models import Model
 import config as cfg
 import os
 from data import read_sample
@@ -86,12 +87,18 @@ class BiLSTM(BaseModel):
             filepath=self.checkpoint_path, 
             verbose=1)
         
+        lr_scheduler = tf.keras.optimizers.schedules.ExponentialDecay(
+            initial_learning_rate=1e-4,
+            decay_steps=10000,
+            decay_rate=0.98,
+            staircase=True)
+
         model = None
         init_epoch = 0
         if not os.path.exists(self.checkpoint_dir) or self.last_epoch() == 0:
             os.makedirs(self.checkpoint_dir, exist_ok=True)
             self.build_model()    
-            optimizer = keras.optimizers.RMSprop()
+            optimizer = tf.keras.optimizers.Adam(learning_rate=lr_scheduler)
             self.model.compile(optimizer, loss='binary_crossentropy', metrics=['accuracy'])
         else:
             init_epoch = self.last_epoch()
@@ -149,8 +156,8 @@ class BiLSTM(BaseModel):
         
         plt.figure(figsize=(10, 5))
         plt.ylim((0.0, 1.0))
-        plt.xticks(np.arange(cfg.PITCH_LIST), labels=cfg.PITCH_LIST)
-        plt.bar(cfg.PITCH_LIST, metrics[0, :, 2])
+        plt.xticks(np.arange(cfg.PITCH_NUM), labels=cfg.PITCH_LIST)
+        plt.bar(np.arange(cfg.PITCH_NUM), metrics[0, :, 2])
         plt.show()
         plt.close()
         
@@ -184,19 +191,19 @@ class OaF_Drum(BiLSTM):
     def build_model(self, input_shape=(None, cfg.INPUT_SIZE), use_lstm=True):
         input = Input(shape=input_shape, dtype='float32')
         reshape = Reshape((-1, cfg.INPUT_SIZE, 1))(input)
-        x = Conv2D(16, (3,3), padding='SAME')(reshape)
+        x = Conv2D(16, (3,3), padding='SAME', activation='relu')(reshape)
         x = BatchNormalization()(x)
-        x = Conv2D(16, (3,3), padding='SAME')(x)
+        x = Conv2D(16, (3,3), padding='SAME', activation='relu')(x)
         x = BatchNormalization()(x)
         x = MaxPooling2D((1, 2), strides=(1, 2))(x)
         x = Dropout(0.75)(x)
-        x = Conv2D(32, (3,3), padding='SAME')(x)
+        x = Conv2D(32, (3,3), padding='SAME', activation='relu')(x)
         x = BatchNormalization()(x)
         x = MaxPooling2D((1, 2), strides=(1, 2))(x)
         x = Dropout(0.75)(x)
         dim = x.get_shape()
         x = Reshape((-1, int(dim[2]*dim[3])))(x)
-        x = Dense(256)(x)
+        x = Dense(256, activation='relu')(x)
         x = Dropout(0.5)(x)
         if use_lstm:
             x = Bidirectional(LSTM(64, return_sequences=True))(x)
