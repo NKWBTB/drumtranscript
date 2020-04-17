@@ -6,7 +6,7 @@ from tensorflow.keras.models import Model
 import config as cfg
 import os
 from data import read_sample
-from utils import list_files
+from utils import list_files, save_wav
 import random
 import math
 import numpy as np
@@ -126,6 +126,7 @@ class BiLSTM(BaseModel):
         import mir_eval
         from data import matrix2sequence, parse_sequence
         metrics = np.zeros((thresholds.shape[0], cfg.PITCH_NUM, 3), dtype=float)
+        best_file, best_f = None, 0
         for i in range(thresholds.shape[0]):
             cnt = 0
             sample_num = np.zeros((cfg.PITCH_NUM, 1))
@@ -140,27 +141,37 @@ class BiLSTM(BaseModel):
                 gt_notes = sample['Sequence']
                 pred_notes = parse_sequence(pred_sequence)
 
+                sum, num = 0, 0
                 for j in cfg.PITCH_LIST:
                     if (not j in gt_notes) and (not j in pred_notes):
                         continue
                     ref_intervals = gt_notes.get(j, np.zeros((0, 2), dtype=float))
                     est_intervals = pred_notes.get(j, np.zeros((0, 2), dtype=float))
                     p, r, f = mir_eval.transcription.onset_precision_recall_f1(ref_intervals, est_intervals)
-                    
+
                     k = cfg.INDEX_DICT[j]
                     sample_num[k, 0] += 1
                     metrics[i, k, 0] += p
                     metrics[i, k, 1] += r
                     metrics[i, k, 2] += f
+                    sum += f
+                    num += 1
+                if sum / float(num) > best_f and len(sample['Audio']) / float(cfg.SAMPLE_RATE) > 3:
+                    best_f = sum / float(num)
+                    best_file = file
+                
             metrics[i] /= sample_num
         
         plt.figure(figsize=(10, 5))
         plt.ylim((0.0, 1.0))
         plt.xticks(np.arange(cfg.PITCH_NUM), labels=cfg.PITCH_LIST)
         plt.bar(np.arange(cfg.PITCH_NUM), metrics[0, :, 2])
-        plt.show()
+        #plt.show()
+        plt.savefig('eval.png')
         plt.close()
-        
+        print('Best test: ', best_file, best_f)
+        sample = read_sample(best_file)
+        save_wav('best.wav', sample['Audio'], cfg.SAMPLE_RATE)
         return metrics
 
     def save(self, path):

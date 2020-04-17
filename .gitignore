@@ -131,6 +131,7 @@ dmypy.json
 # Others
 .vscode
 *.png
+!eval.png
 *.mid
 *.wav
 *.dll

@@ -50,16 +50,15 @@ optional arguments:
 
 Typical usages of the program:
 
-1. Set the ``config.py``, 
+1.Set the ``config.py``, optional for ``trans`` task. 
     - ``TFDS_DATA_DIR``: path to save the dataset.
     - ``SEQ_SAMPLE_PATH``: path to save the preprocessed samples.
-    - Other optional settings:
-        - ``FRAME_TIME``: The time of a frame used in millisecond(ms).
-        - ``USE_SYNTH_AUDIO``: Bool flag, set ``True`` to use synthesized audio.
-        - ``USE_MIXUP``: Bool flag, set ``True`` to use mixup audio.
-        - ``SPECTROGRAM``: Bool flag, set ``True`` to use mel spectrogram feature.
-        - ``NUM_EPOCHS``: Number of maxiumum epochs used for training.
-        - ``BATCH_SIZE``: Default batch size used for training.
+    - ``FRAME_TIME``: The time of a frame used in millisecond(ms).
+    - ``USE_SYNTH_AUDIO``: Bool flag, set ``True`` to use synthesized audio.
+    - ``USE_MIXUP``: Bool flag, set ``True`` to use mixup audio.
+    - ``SPECTROGRAM``: Bool flag, set ``True`` to use mel spectrogram feature.
+    - ``NUM_EPOCHS``: Number of maxiumum epochs used for training.
+    - ``BATCH_SIZE``: Default batch size used for training.
 2. Preprocess the dataset
 ```
 python main.py -t pre
@@ -76,6 +75,19 @@ python main.py -t test -m SimpleLSTM -p path_to_savedModel.h5
 ```
 python main.py -t trans -m SimpleLSTM -p path_to_savedModel.h5 -i input.wav -o output.mid
 ```
+## Demo
+1. Download the pretrained model (``OaF_Drum_epoch31.h5``) of modified [OaF_Drum](https://magenta.tensorflow.org/oaf-drums) and the test file (``test.wav``, a synthesized wav using the midi file from the testset of [Groove MIDI Dataset](https://magenta.tensorflow.org/datasets/groove)) from the link below.
+```
+https://iastate.box.com/s/3p2zb7r5822aersm4t6pp38uwoxazxvu
+```
+2. Run the trans task
+```
+python main.py -t trans -m OaF_Drum -p OaF_Drum_epoch31.h5 -i test.wav -o test.mid
+```
+3. A ``test.mid`` MIDI file will generate which should be the same as the ``test.mid`` on the link above.
+
+The F1-score (average per piece) of the pretrained model on the testing set for each pitch :
+![avatar](eval.png)
 ## Reference
 Part of this work uses dataset from
 ```

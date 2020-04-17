@@ -291,7 +291,7 @@ def preprocess(dataset = tfds.load(name=cfg.TFDS_NAME, data_dir=cfg.TFDS_DATA_DI
             samples = split2batch(source_audio, source_sequence) if SPLIT == 'train' else [(source_audio, source_sequence)]
             preprocess_samples(samples, frame_size, frame_time, spectrogram, str(cnt), save_dir)
 
-            if synth and not synth_except:
+            if synth and (not synth_except) and SPLIT != 'test':
                 try:
                     synthed_audio = synthesis_audio(source_sequence)
                     synthed_samples = split2batch(synthed_audio, source_sequence) if SPLIT == 'train' else [(synthed_audio, source_sequence)]

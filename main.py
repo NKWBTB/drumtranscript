@@ -9,8 +9,7 @@ import utils
 def transcribe(m, input, output):
     import magenta.music as mm
     import data
-    wav, _ = librosa.load(input, sr=cfg.SAMPLE_RATE)
-    wav = librosa.util.normalize(wav)
+    wav = utils.load_wav(input, cfg.SAMPLE_RATE)
     frames, _ = data.audio2frame(wav, cfg.FRAME_SIZE, cfg.SPECTROGRAM)
     onset, _ = m.predict(frames)
     sequence = data.matrix2sequence(onset[0], onset=onset[0])

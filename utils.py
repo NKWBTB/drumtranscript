@@ -2,6 +2,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import inspect
+import librosa
 
 def plot_array(array, x_range = None, subplot = None):
     if type(x_range) == type(None):
@@ -38,3 +39,11 @@ def list_files(path, extension = ''):
 def list_class(module):
     return [m[0] for m in inspect.getmembers(module, inspect.isclass) \
         if m[1].__module__ == module.__name__]
+
+def load_wav(path, sr):
+    wav, _ = librosa.load(path, sr)
+    wav = librosa.util.normalize(wav)
+    return wav
+
+def save_wav(path, audio, sr):
+    librosa.output.write_wav(path, audio, sr)
