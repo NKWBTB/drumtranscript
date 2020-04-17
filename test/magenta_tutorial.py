@@ -1,3 +1,6 @@
+# Code clips from the link below
+# https://colab.research.google.com/notebooks/magenta/hello_magenta/hello_magenta.ipynb
+
 import magenta.music as mm
 import magenta
 import tensorflow
