@@ -6,12 +6,12 @@ import scipy
 import config as cfg
 import utils
 
-def transcribe(m, input, output):
+def transcribe(m, input, output, threshold):
     import magenta.music as mm
     import data
     wav = utils.load_wav(input, cfg.SAMPLE_RATE)
     frames, _ = data.audio2frame(wav, cfg.FRAME_SIZE, cfg.SPECTROGRAM)
-    onset, _ = m.predict(frames)
+    onset, _ = m.predict(frames, threshold)
     sequence = data.matrix2sequence(onset[0], onset=onset[0])
     mm.sequence_proto_to_midi_file(sequence, output)
 
@@ -42,6 +42,8 @@ def main():
                         help="The wave input file for transcribe, only useful when task being 'trans'.")
     parser.add_argument('--output', '-o', 
                         help="The midi output file for transcribe, only useful when task being 'trans'.")
+    parser.add_argument('--threshold', '-T', default=0.5, type=float,
+                        help="The threshold for transcibe, only useful when task being 'trans'.")
     args = parser.parse_args()
 
     if args.task == 'pre':
@@ -75,7 +77,7 @@ def main():
         return -1
     
     if args.task == 'test':
-        m.evaluate(test_files)
+        m.evaluate(val_files, test_files)
     else:
         if args.input is None or args.output is None:
             print('\n\nError: --input and --output must be specified!!')
@@ -83,7 +85,7 @@ def main():
         if not os.path.exists(args.input):
             print('\n\nError: Input wav file does not exists.')
             return -1
-        transcribe(m, args.input, args.output)
+        transcribe(m, args.input, args.output, args.threshold)
 
 if __name__ == "__main__":
     main()

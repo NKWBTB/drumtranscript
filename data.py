@@ -21,6 +21,30 @@ import scipy
 import math
 import librosa
 import random
+import mir_eval
+
+def measure(gt_notes, pred_notes):
+    metrics = np.zeros((cfg.PITCH_NUM, 3), dtype=float)
+    for j in cfg.PITCH_LIST:
+        ref_intervals = gt_notes.get(j, np.zeros((0, 2), dtype=float))
+        est_intervals = pred_notes.get(j, np.zeros((0, 2), dtype=float))
+
+        match = mir_eval.transcription.match_note_onsets(ref_intervals, est_intervals)
+        TP = len(match)
+        FP = len(est_intervals) - TP
+        FN = len(ref_intervals) - TP
+        i = cfg.INDEX_DICT[j]
+        metrics[i, 0], metrics[i, 1], metrics[i, 2] = TP, FP, FN
+    
+    TP = float(np.sum(metrics[:, 0]))
+    FP = np.sum(metrics[:, 1])
+    FN = np.sum(metrics[:, 2])
+    
+    p = TP / (TP+FP)
+    r = TP / (TP+FN)
+    f = 2*p*r/(p+r)
+
+    return metrics, p, r, f
 
 def parse_sequence(sequence):
     notes = {}
@@ -291,7 +315,7 @@ def preprocess(dataset = tfds.load(name=cfg.TFDS_NAME, data_dir=cfg.TFDS_DATA_DI
             samples = split2batch(source_audio, source_sequence) if SPLIT == 'train' else [(source_audio, source_sequence)]
             preprocess_samples(samples, frame_size, frame_time, spectrogram, str(cnt), save_dir)
 
-            if synth and (not synth_except) and SPLIT != 'test':
+            if synth and (not synth_except) and SPLIT == 'train':
                 try:
                     synthed_audio = synthesis_audio(source_sequence)
                     synthed_samples = split2batch(synthed_audio, source_sequence) if SPLIT == 'train' else [(synthed_audio, source_sequence)]

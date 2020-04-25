@@ -24,8 +24,9 @@ The files are organized as follows:
 Arguments for ``main.py``:
 ```
 usage: main.py [-h] --task {pre,train,test,trans}
-               [--model {BiLSTM,OaF_Drum,SimpleLSTM}]
+               [--model {BiLSTM,OaF_Drum,SimpleDNN,SimpleLSTM}]
                [--model_path MODEL_PATH] [--input INPUT] [--output OUTPUT]
+               [--threshold THRESHOLD]
 
 Transcribe the drum solo from a wave file to a midi file.
 
@@ -36,7 +37,7 @@ optional arguments:
                         dataset; train: train the model; test: test the model
                         performance on testset; trans: transcibe using a
                         trained model.
-  --model {BiLSTM,OaF_Drum,SimpleLSTM}, -m {BiLSTM,OaF_Drum,SimpleLSTM}
+  --model {BiLSTM,OaF_Drum,SimpleDNN,SimpleLSTM}, -m {BiLSTM,OaF_Drum,SimpleDNN,SimpleLSTM}
                         The type of model used.
   --model_path MODEL_PATH, -p MODEL_PATH
                         The model file used for 'trans' and 'test'.
@@ -46,6 +47,9 @@ optional arguments:
   --output OUTPUT, -o OUTPUT
                         The midi output file for transcribe, only useful when
                         task being 'trans'.
+  --threshold THRESHOLD, -T THRESHOLD
+                        The threshold for transcibe, only useful when task
+                        being 'trans'.
 ```
 
 Typical usages of the program:
@@ -74,7 +78,7 @@ python main.py -t test -m SimpleLSTM -p path_to_savedModel.h5
 ```
 5. Transcribe a solo drum music to MIDI.
 ```
-python main.py -t trans -m SimpleLSTM -p path_to_savedModel.h5 -i input.wav -o output.mid
+python main.py -t trans -m SimpleLSTM -p path_to_savedModel.h5 -i input.wav -o output.mid -T <threshold>
 ```
 ## Demo
 1. Download the pretrained model (``OaF_Drum_epoch31.h5``) of modified [OaF_Drum](https://magenta.tensorflow.org/oaf-drums) and the test file (``test.wav``, a synthesized wav using the midi file from the testset of [Groove MIDI Dataset](https://magenta.tensorflow.org/datasets/groove)) from the link below.
@@ -83,11 +87,11 @@ https://iastate.box.com/s/3p2zb7r5822aersm4t6pp38uwoxazxvu
 ```
 2. Run the trans task
 ```
-python main.py -t trans -m OaF_Drum -p OaF_Drum_epoch31.h5 -i test.wav -o test.mid
+python main.py -t trans -m OaF_Drum -p OaF_Drum_epoch31.h5 -i test.wav -o test.mid -T 0.3
 ```
 3. A ``test.mid`` MIDI file will generate which should be the same as the ``test.mid`` on the link above.
 
-The F1-score (average per piece) of the pretrained model on the testing set for each pitch :
+The F1-score of the pretrained model on the testing set for each pitch :
 ![avatar](eval.png)
 ## Reference
 Part of this work uses dataset from

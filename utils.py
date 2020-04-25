@@ -28,6 +28,27 @@ def plot_matrix(mat, x_range = None, y_range = None):
     plt.show()
     plt.close()
 
+def plot_bar(y, xrange, xlabel, filename, xtitle = None, ytitle = None):
+    plt.figure(figsize=(10, 5))
+    plt.ylim((0.0, 1.0))
+    plt.xticks(xrange, labels=xlabel)
+    plt.bar(xrange, y)
+    plt.xlabel(xtitle)
+    plt.ylabel(ytitle)
+    # plt.show()
+    plt.savefig(filename)
+    plt.close()
+
+def plot_line(y, x, filename, xtitle = None, ytitle = None):
+    plt.figure(figsize=(5, 5))
+    plt.ylim((0.0, 1.0))
+    plt.plot(x, y)
+    plt.xlabel(xtitle)
+    plt.ylabel(ytitle)
+    # plt.show()
+    plt.savefig(filename)
+    plt.close()
+
 def list_files(path, extension = ''):
     files = os.listdir(path)
     filtered = []
