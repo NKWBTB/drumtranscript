@@ -342,13 +342,19 @@ def get_statistics(path):
         v = s['Statistics']
         sum += v
     print(sum)
+    return sum
 
 def main():
     #preprocess()
     train_path = os.path.join(cfg.SEQ_SAMPLE_PATH, str(cfg.FRAME_TIME) + '_ms', 'train')
+    val_path = os.path.join(cfg.SEQ_SAMPLE_PATH, str(cfg.FRAME_TIME) + '_ms', 'validation')
+    test_path = os.path.join(cfg.SEQ_SAMPLE_PATH, str(cfg.FRAME_TIME) + '_ms', 'test')
     # train_files = utils.list_files(train_path, 'pickle') 
     # mixup(train_path, cfg.MIXUP_NUM, cfg.MIXUP_THRESH, cfg.SPECTROGRAM, cfg.FRAME_SIZE)
-    get_statistics(train_path)        
+    train = get_statistics(train_path)
+    val = get_statistics(val_path)
+    test = get_statistics(test_path)
+    
 
 if __name__ == '__main__':
     main()

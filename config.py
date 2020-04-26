@@ -32,7 +32,7 @@ FMIN = 30.0
 HTK = True
 
 NUM_EPOCHS = 60
-BATCH_SIZE = 128
+BATCH_SIZE = 16
 INPUT_SIZE = N_MELS if SPECTROGRAM else FRAME_SIZE
 
 # Hack to allow python to pick up the newly-installed fluidsynth lib. 

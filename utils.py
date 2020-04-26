@@ -1,6 +1,7 @@
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+import csv
 import inspect
 import librosa
 
@@ -68,3 +69,8 @@ def load_wav(path, sr):
 
 def save_wav(path, audio, sr):
     librosa.output.write_wav(path, audio, sr)
+
+def save_array(path, x):
+    with open(path, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerows(x)

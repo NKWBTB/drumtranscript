@@ -6,7 +6,7 @@ from tensorflow.keras.models import Model
 import config as cfg
 import os
 from data import read_sample
-from utils import list_files, save_wav, plot_bar, plot_line
+from utils import *
 import random
 import math
 import numpy as np
@@ -181,6 +181,7 @@ class BiLSTM(BaseModel):
     
         plot_line(f, thresholds, 'thresh.png', 'Threshold', 'F-measure')
         plot_line(r, p, 'pr.png', 'Precision', 'Recall')
+        save_array(self.__class__.__name__ + '_prf.csv', [p, r, f])
 
         best_idx = np.argmax(f)
         print('Best_threshold', thresholds[best_idx])
@@ -237,7 +238,7 @@ class OaF_Drum(BiLSTM):
         self.checkpoint_dir = os.path.dirname(self.checkpoint_path)
         self.model = None
     
-    def build_model(self, input_shape=(None, cfg.INPUT_SIZE), use_lstm=True):
+    def build_model(self, input_shape=(None, cfg.INPUT_SIZE), use_lstm=False, use_dropout=True):
         input = Input(shape=input_shape, dtype='float32')
         reshape = Reshape((-1, cfg.INPUT_SIZE, 1))(input)
         x = Conv2D(16, (3,3), padding='SAME', activation='relu')(reshape)
@@ -245,15 +246,18 @@ class OaF_Drum(BiLSTM):
         x = Conv2D(16, (3,3), padding='SAME', activation='relu')(x)
         x = BatchNormalization()(x)
         x = MaxPooling2D((1, 2), strides=(1, 2))(x)
-        x = Dropout(0.75)(x)
+        if use_dropout:
+            x = Dropout(0.75)(x)
         x = Conv2D(32, (3,3), padding='SAME', activation='relu')(x)
         x = BatchNormalization()(x)
         x = MaxPooling2D((1, 2), strides=(1, 2))(x)
-        x = Dropout(0.75)(x)
+        if use_dropout:
+            x = Dropout(0.75)(x)
         dim = x.get_shape()
         x = Reshape((-1, int(dim[2]*dim[3])))(x)
         x = Dense(256, activation='relu')(x)
-        x = Dropout(0.5)(x)
+        if use_dropout:
+            x = Dropout(0.5)(x)
         if use_lstm:
             x = Bidirectional(LSTM(64, return_sequences=True))(x)
         preds = Dense(cfg.PITCH_NUM, activation='sigmoid')(x)
