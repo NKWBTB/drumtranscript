@@ -204,6 +204,7 @@ class BiLSTM(BaseModel):
 
     def load(self, path):
         self.model = keras.models.load_model(path)
+        self.model.summary()
 
 class SimpleLSTM(BiLSTM):
     def __init__(self):

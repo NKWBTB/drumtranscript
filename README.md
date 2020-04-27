@@ -87,7 +87,7 @@ https://iastate.box.com/s/3p2zb7r5822aersm4t6pp38uwoxazxvu
 ```
 2. Run the trans task
 ```
-python main.py -t trans -m OaF_Drum -p OaF_Drum_epoch31.h5 -i test.wav -o test.mid -T 0.3
+python main.py -t trans -m OaF_Drum -p model.h5 -i test.wav -o test.mid -T 0.4
 ```
 3. A ``test.mid`` MIDI file will generate which should be the same as the ``test.mid`` on the link above.
 
