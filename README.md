@@ -81,7 +81,7 @@ python main.py -t test -m SimpleLSTM -p path_to_savedModel.h5
 python main.py -t trans -m SimpleLSTM -p path_to_savedModel.h5 -i input.wav -o output.mid -T <threshold>
 ```
 ## Demo
-1. Download the pretrained model (``OaF_Drum_epoch31.h5``) of modified [OaF_Drum](https://magenta.tensorflow.org/oaf-drums) and the test file (``test.wav``, a synthesized wav using the midi file from the testset of [Groove MIDI Dataset](https://magenta.tensorflow.org/datasets/groove)) from the link below.
+1. Download the pretrained model (``model.h5``) of modified [OaF_Drum](https://magenta.tensorflow.org/oaf-drums) and the test file (``test.wav``, a audio file from the testset of [Groove MIDI Dataset](https://magenta.tensorflow.org/datasets/groove)) from the link below.
 ```
 https://iastate.box.com/s/3p2zb7r5822aersm4t6pp38uwoxazxvu
 ```
