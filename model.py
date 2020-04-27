@@ -87,19 +87,19 @@ class BiLSTM(BaseModel):
         cp_callback = keras.callbacks.ModelCheckpoint(
             filepath=self.checkpoint_path, 
             verbose=1)
-        
+        '''
         lr_scheduler = tf.keras.optimizers.schedules.ExponentialDecay(
             initial_learning_rate=1e-4,
             decay_steps=trainning_steps,
             decay_rate=0.98,
             staircase=True)
-
+        '''
         model = None
         init_epoch = 0
         if not os.path.exists(self.checkpoint_dir) or self.last_epoch() == 0:
             os.makedirs(self.checkpoint_dir, exist_ok=True)
             self.build_model()    
-            optimizer = tf.keras.optimizers.Adam(learning_rate=lr_scheduler)
+            optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3)
             self.model.compile(optimizer, loss='binary_crossentropy', metrics=['accuracy'])
         else:
             init_epoch = self.last_epoch()
@@ -247,12 +247,12 @@ class OaF_Drum(BiLSTM):
         x = BatchNormalization()(x)
         x = MaxPooling2D((1, 2), strides=(1, 2))(x)
         if use_dropout:
-            x = Dropout(0.75)(x)
+            x = Dropout(0.25)(x)
         x = Conv2D(32, (3,3), padding='SAME', activation='relu')(x)
         x = BatchNormalization()(x)
         x = MaxPooling2D((1, 2), strides=(1, 2))(x)
         if use_dropout:
-            x = Dropout(0.75)(x)
+            x = Dropout(0.25)(x)
         dim = x.get_shape()
         x = Reshape((-1, int(dim[2]*dim[3])))(x)
         x = Dense(256, activation='relu')(x)

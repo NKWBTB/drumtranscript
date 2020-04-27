@@ -6,9 +6,9 @@ TFDS_SPLITS = ['train', 'validation', 'test']
 # Path for preprocessed sequence sample 
 SEQ_SAMPLE_PATH = "C:\\Users\\NKWBTB\\Desktop\\drum"
 
-USE_SYNTH_AUDIO = True
+USE_SYNTH_AUDIO = False
 USE_MIXUP = True
-MIXUP_NUM = 5000
+MIXUP_NUM = 2500
 MIXUP_THRESH = 0.43
 
 # Frame settings
